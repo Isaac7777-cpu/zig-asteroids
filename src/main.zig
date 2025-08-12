@@ -1,46 +1,56 @@
-//! By convention, main.zig is where your main function lives in the case that
-//! you are building an executable. If you are making a library, the convention
-//! is to delete this file and start with root.zig instead.
+const std = @import("std");
+const rl = @import("raylib");
 
-pub fn main() !void {
-    // Prints to stderr (it's a shortcut based on `std.io.getStdErr()`)
-    std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
+const THICKNESS = 3.0;
 
-    // stdout is for the actual output of your application, for example if you
-    // are implementing gzip, then only the compressed bytes should be sent to
-    // stdout, not any debugging messages.
-    const stdout_file = std.io.getStdOut().writer();
-    var bw = std.io.bufferedWriter(stdout_file);
-    const stdout = bw.writer();
+const Vector2 = rl.Vector2;
 
-    try stdout.print("Run `zig build test` to run the tests.\n", .{});
+const State = struct {
+    shipPos: Vector2,
+};
 
-    try bw.flush(); // Don't forget to flush!
-}
+var state: State = {};
 
-test "simple test" {
-    var list = std.ArrayList(i32).init(std.testing.allocator);
-    defer list.deinit(); // Try commenting this out and see if zig detects the memory leak!
-    try list.append(42);
-    try std.testing.expectEqual(@as(i32, 42), list.pop());
-}
-
-test "use other module" {
-    try std.testing.expectEqual(@as(i32, 150), lib.add(100, 50));
-}
-
-test "fuzz example" {
-    const Context = struct {
-        fn testOne(context: @This(), input: []const u8) anyerror!void {
-            _ = context;
-            // Try passing `--fuzz` to `zig build test` and see if it manages to fail this test case!
-            try std.testing.expect(!std.mem.eql(u8, "canyoufindme", input));
+fn drawLine(origin: Vector2, scale: f32, points: []Vector2) void {
+    // transform(point)
+    const Transformer = struct {
+        fn apply(p: Vector2) Vector2 {
+            return Vector2.init(p.x + origin.x * scale, p.y + origin.y * scale);
         }
     };
-    try std.testing.fuzz(Context{}, Context.testOne, .{});
+
+    for (0..points.len) |i| {
+        rl.drawLineEx(
+            Transformer.apply(points[i]),
+            Transformer.apply(points[(i + 1) % points.len]),
+            THICKNESS,
+            .white,
+        );
+    }
 }
 
-const std = @import("std");
+// fn drawShip(pos: Vector2) void {
+//     _ = pos;
+// }
 
-/// This imports the separate module containing `root.zig`. Take a look in `build.zig` for details.
-const lib = @import("asteroid_lib");
+pub fn main() !void {
+    std.debug.print("Hello, world!\n", .{});
+    rl.setConfigFlags(.{
+        .window_highdpi = true, // This is required for the display on my mac to work correctly
+        // .window_resizable = true,
+    });
+    rl.initWindow(640 * 2, 480 * 2, "Asteroids Replica");
+    rl.setWindowPosition(100, 100);
+    rl.setTargetFPS(60);
+
+    while (!rl.windowShouldClose()) {
+        rl.beginDrawing();
+        defer rl.endDrawing();
+
+        rl.clearBackground(rl.Color.black);
+
+        const a = Vector2{ .x = 10, .y = 10 };
+        const b = Vector2{ .x = 20, .y = 20 };
+        rl.drawLineV(a, b, rl.Color.white);
+    }
+}
