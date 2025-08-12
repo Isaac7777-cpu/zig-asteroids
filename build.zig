@@ -15,6 +15,15 @@ pub fn build(b: *std.Build) void {
     // set a preferred release mode, allowing the user to decide how to optimize.
     const optimize = b.standardOptimizeOption(.{});
 
+    const raylib_dep = b.dependency("raylib_zig", .{
+        .target = target,
+        .optimize = optimize,
+    });
+
+    const raylib = raylib_dep.module("raylib"); // Main raylib module
+    const raygui = raylib_dep.module("raygui"); // Raygui module
+    const raylib_artifac = raylib_dep.artifact("raylib"); // Raylib C library
+
     // This creates a "module", which represents a collection of source files alongside
     // some compilation options, such as optimization mode and linked system libraries.
     // Every executable or library we compile will be based on one or more modules.
@@ -38,6 +47,9 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
+
+    exe_mod.addImport("raylib", raylib);
+    exe_mod.addImport("raygui", raygui);
 
     // Modules can depend on one another using the `std.Build.Module.addImport` function.
     // This is what allows Zig source code to use `@import("foo")` where 'foo' is not a
@@ -64,6 +76,8 @@ pub fn build(b: *std.Build) void {
         .name = "asteroid",
         .root_module = exe_mod,
     });
+
+    exe.linkLibrary(raylib_artifac);
 
     // This declares intent for the executable to be installed into the
     // standard location when the user invokes the "install" step (the default
