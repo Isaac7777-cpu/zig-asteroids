@@ -1,9 +1,11 @@
 const std = @import("std");
 const rl = @import("raylib");
+const rlm = rl.math;
+const Vector2 = rl.Vector2;
 
 const THICKNESS = 3.0;
 
-const Vector2 = rl.Vector2;
+// const Vector2 = rl.Vector2;
 
 const State = struct {
     shipPos: Vector2,
@@ -11,18 +13,26 @@ const State = struct {
 
 var state: State = {};
 
-fn drawLine(origin: Vector2, scale: f32, points: []Vector2) void {
+fn drawLines(origin: Vector2, scale: f32, points: []const Vector2) void {
     // transform(point)
     const Transformer = struct {
-        fn apply(p: Vector2) Vector2 {
-            return Vector2.init(p.x + origin.x * scale, p.y + origin.y * scale);
+        origin: Vector2,
+        scale: f32,
+
+        fn apply(self: @This(), p: Vector2) Vector2 {
+            return rlm.vector2Add(rlm.vector2Scale(p, self.scale), self.origin);
         }
+    };
+
+    const t = Transformer{
+        .origin = origin,
+        .scale = scale,
     };
 
     for (0..points.len) |i| {
         rl.drawLineEx(
-            Transformer.apply(points[i]),
-            Transformer.apply(points[(i + 1) % points.len]),
+            t.apply(points[i]),
+            t.apply(points[(i + 1) % points.len]),
             THICKNESS,
             .white,
         );
@@ -49,8 +59,20 @@ pub fn main() !void {
 
         rl.clearBackground(rl.Color.black);
 
-        const a = Vector2{ .x = 10, .y = 10 };
-        const b = Vector2{ .x = 20, .y = 20 };
-        rl.drawLineV(a, b, rl.Color.white);
+        // const a = Vector2{ .x = 10, .y = 10 };
+        // const b = Vector2{ .x = 100, .y = 100 };
+        // rl.drawLineV(a, b, rl.Color.white);
+
+        drawLines(
+            Vector2.init(100, 100),
+            100,
+            &[_]Vector2{
+                Vector2.init(-0.4, -0.5),
+                Vector2.init(0.0, 0.5),
+                Vector2.init(0.4, -0.5),
+                Vector2.init(0.3, -0.4),
+                Vector2.init(-0.3, -0.4),
+            },
+        );
     }
 }
